@@ -12,7 +12,7 @@ export const getServerSideProps = getApplicationServerSideProps(
     await useGetEventByIdQuery({
       req,
       queryClient,
-      id: eventId,
+      id: eventId as string,
     });
 
     return {

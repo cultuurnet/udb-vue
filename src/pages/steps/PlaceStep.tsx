@@ -63,24 +63,20 @@ const PlaceStep = ({
 
   const isMovie = terms.includes(EventTypes.Bioscoop);
 
-  const useGetPlacesQuery = useGetPlacesByQuery(
-    {
+  const useGetPlacesQuery = useGetPlacesByQuery({
+    enabled: !!searchInput,
+    queryArguments: {
       name: searchInput,
       terms,
       zip: municipality?.zip,
       addressLocality: municipality?.name,
       addressCountry: country,
     },
-    { enabled: !!searchInput },
-  );
+  });
 
-  const places = useMemo<Place[]>(
-    // @ts-expect-error
+  const places = useMemo(
     () => useGetPlacesQuery.data?.member ?? [],
-    [
-      // @ts-expect-error
-      useGetPlacesQuery.data?.member,
-    ],
+    [useGetPlacesQuery.data?.member],
   );
 
   const place = useWatch({ control, name: 'location.place' });
@@ -156,7 +152,6 @@ const PlaceStep = ({
                   }
                   Component={
                     <Typeahead
-                      // @ts-expect-error
                       isLoading={useGetPlacesQuery.isLoading}
                       options={places}
                       onInputChange={debounce(setSearchInput, 275)}

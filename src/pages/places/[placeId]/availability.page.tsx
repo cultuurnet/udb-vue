@@ -16,13 +16,16 @@ const Availability = () => {
   const { placeId } = router.query;
 
   const getPlaceByIdQuery = useGetPlaceByIdQuery({
-    id: placeId,
-    scope: OfferTypes.PLACES,
+    queryArguments: {
+      id: placeId as string,
+      scope: OfferTypes.PLACES,
+    },
   });
 
-  if (getPlaceByIdQuery.status === QueryStatus.LOADING) {
+  if (getPlaceByIdQuery.status !== QueryStatus.SUCCESS) {
     return <Spinner marginTop={4} />;
   }
+
   return (
     <AvailabilityPageSingle
       offer={getPlaceByIdQuery.data}
@@ -34,8 +37,11 @@ const Availability = () => {
 
 export const getServerSideProps = getApplicationServerSideProps(
   async ({ req, query, cookies, queryClient }) => {
-    const { placeId } = query;
-    await useGetPlaceByIdQuery({ req, queryClient, id: placeId });
+    await useGetPlaceByIdQuery({
+      req,
+      queryClient,
+      queryArguments: { id: query.placeId as string },
+    });
 
     return {
       props: {

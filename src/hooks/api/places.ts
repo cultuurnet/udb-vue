@@ -26,10 +26,16 @@ import {
   useAuthenticatedMutation,
   useAuthenticatedQuery,
 } from './authenticated-query';
+import {
+  AuthenticatedQueryFunctionContext,
+  useAuthenticatedQuery as useAuthenticatedQueryV2,
+  UseAuthenticatedQueryOptions,
+  UseAuthenticatedQueryWrapperOptions,
+} from './authenticated-query-v2';
 import type { Headers } from './types/Headers';
 import type { User } from './user';
 
-const getPlaceById = async ({ headers, id }) => {
+const getPlaceById = async ({ headers, queryArguments: { id } }) => {
   const res = await fetchFromApi({
     path: `/places/${id.toString()}`,
     options: {
@@ -38,9 +44,10 @@ const getPlaceById = async ({ headers, id }) => {
   });
   if (isErrorObject(res)) {
     // eslint-disable-next-line no-console
-    return console.error(res);
+    console.error(res);
+    return;
   }
-  return await res.json();
+  return (await res.json()) as Place;
 };
 
 type UseGetPlaceByIdArguments = ServerSideQueryOptions & {
@@ -48,19 +55,14 @@ type UseGetPlaceByIdArguments = ServerSideQueryOptions & {
   scope?: Values<typeof OfferTypes>;
 };
 
-const useGetPlaceByIdQuery = (
-  { req, queryClient, id, scope }: UseGetPlaceByIdArguments,
-  configuration: UseQueryOptions = {},
-) =>
-  useAuthenticatedQuery({
-    req,
-    queryClient,
+const useGetPlaceByIdQuery = wrap(
+  useAuthenticatedQueryV2<Place, UseGetPlaceByIdArguments>,
+  ({ queryArguments: { id, scope } }) => ({
     queryKey: ['places'],
     queryFn: getPlaceById,
-    queryArguments: { id },
     enabled: !!id && scope === OfferTypes.PLACES,
-    ...configuration,
-  });
+  }),
+);
 
 const getPlacesByCreator = async ({ headers, ...queryData }) => {
   delete headers['Authorization'];
@@ -123,7 +125,7 @@ const useGetPlacesByCreatorQuery = (
 
 type GetPlacesByQueryArguments = {
   name: string;
-  terms: Array<Values<typeof EventTypes>>;
+  terms: Values<typeof EventTypes>[];
   zip?: string;
   addressLocality?: string;
   addressCountry?: Country;
@@ -131,12 +133,14 @@ type GetPlacesByQueryArguments = {
 
 const getPlacesByQuery = async ({
   headers,
-  name,
-  terms,
-  zip,
-  addressLocality,
-  addressCountry,
-}: Headers & GetPlacesByQueryArguments) => {
+  queryArguments: {
+    name,
+    terms,
+    zip = null,
+    addressLocality = null,
+    addressCountry = null,
+  },
+}) => {
   const termsString = terms.reduce(
     (acc, currentTerm) => `${acc}terms.id:${currentTerm}`,
     '',
@@ -169,34 +173,30 @@ const getPlacesByQuery = async ({
 
   if (isErrorObject(res)) {
     // eslint-disable-next-line no-console
-    return console.error(res);
+    console.error(res);
+    return;
   }
+
   return await res.json();
 };
 
-const useGetPlacesByQuery = (
-  {
-    name,
-    terms,
-    zip,
-    addressLocality,
-    addressCountry,
-  }: GetPlacesByQueryArguments,
-  configuration = {},
-) =>
-  useAuthenticatedQuery<Place[]>({
+function wrap<T extends typeof useAuthenticatedQueryV2>(
+  fn: T,
+  outerArgs: any = {},
+): T {
+  return <any>function (args) {
+    return fn({ ...args, ...outerArgs(args) });
+  };
+}
+
+const useGetPlacesByQuery = wrap(
+  useAuthenticatedQueryV2<{ member: Place[] }, GetPlacesByQueryArguments>,
+  ({ enabled, queryArguments: { name, terms } }) => ({
     queryKey: ['places'],
     queryFn: getPlacesByQuery,
-    queryArguments: {
-      name,
-      terms,
-      zip,
-      addressCountry,
-      addressLocality,
-    },
-    enabled: !!name || terms.length,
-    ...configuration,
-  });
+    enabled: enabled && (!!name || terms.length > 0),
+  }),
+);
 
 const changeAddress = async ({ headers, id, address, language }) =>
   fetchFromApi({

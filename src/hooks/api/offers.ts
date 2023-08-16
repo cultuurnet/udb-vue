@@ -94,8 +94,13 @@ const useGetOffersByCreatorQuery = (
 const useGetOfferByIdQuery = ({ scope, id }, configuration = {}) => {
   const query =
     scope === OfferTypes.EVENTS ? useGetEventByIdQuery : useGetPlaceByIdQuery;
+  const args =
+    scope === OfferTypes.EVENTS
+      ? [{ id, scope }, configuration]
+      : [{ queryArguments: { id, scope }, ...configuration }];
 
-  return query({ id, scope }, configuration);
+  // @ts-expect-error
+  return query(...args);
 };
 
 const changeOfferName = async ({ headers, id, lang, name, scope }) => {

@@ -86,7 +86,10 @@ const PlaceAddModal = ({
 
       if (!resp?.placeId) return;
 
-      const newPlace = await getPlaceById({ headers, id: resp.placeId });
+      const newPlace = await getPlaceById({
+        headers,
+        queryArguments: { id: resp.placeId },
+      });
       onConfirmSuccess(newPlace);
     })();
   };
