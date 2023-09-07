@@ -1,4 +1,4 @@
-import { FeatureFlags } from './hooks/useFeatureFlag';
+import { FeatureFlagName, FeatureFlags } from './hooks/useFeatureFlag';
 import type { SupportedLanguages } from './i18n';
 import type { Values } from './types/Values';
 
@@ -42,7 +42,12 @@ const createDashboardRedirects = (environment: Environment) => {
 const getRedirects = (
   environment: Environment,
   language: Values<typeof SupportedLanguages> = 'nl',
-) => [
+): {
+  featureFlag?: FeatureFlagName;
+  permanent: boolean;
+  destination: string;
+  source: string;
+}[] => [
   // Only make the permanent redirects really permanent in environments other
   // than development, so we don't get permanent redirects on localhost which
   // may conflict with other projects.

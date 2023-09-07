@@ -1,16 +1,18 @@
 import { isEqual } from 'lodash';
 import flatten from 'lodash/flatten';
-import type { NextApiRequest } from 'next';
 import { useRouter } from 'next/router';
+import { GetServerSidePropsContext } from 'next/types';
 import { useCallback } from 'react';
 import { Cookies } from 'react-cookie';
 import {
   MutationFunction,
   QueryClient,
+  useMutation,
+  useQueries,
+  useQuery,
   useQueryClient,
   UseQueryResult,
 } from 'react-query';
-import { useMutation, useQueries, useQuery } from 'react-query';
 
 import { useCookiesWithOptions } from '@/hooks/useCookiesWithOptions';
 import type { CalendarSummaryFormat } from '@/utils/createEmbededCalendarSummaries';
@@ -21,7 +23,7 @@ import { isTokenValid } from '@/utils/isTokenValid';
 import { createHeaders, useHeaders } from './useHeaders';
 
 type ServerSideQueryOptions = {
-  req?: NextApiRequest;
+  req?: GetServerSidePropsContext['req'];
   queryClient?: QueryClient;
 };
 

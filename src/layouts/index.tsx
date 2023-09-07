@@ -33,10 +33,10 @@ const useHandleAuthentication = () => {
   const getUserQuery = useGetUserQuery();
 
   useEffect(() => {
-    if (!getUserQuery.data) return;
-    Sentry.setUser({ id: getUserQuery.data.id });
+    if (!getUserQuery?.data) return;
+    Sentry.setUser({ id: getUserQuery.data.sub });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getUserQuery.data]);
+  }, [getUserQuery?.data]);
 
   // redirect when there is no token or user cookie
   // manipulation from outside the application

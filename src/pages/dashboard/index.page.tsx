@@ -22,11 +22,7 @@ import {
   useDeletePlaceByIdMutation,
   useGetPlacesByCreatorQuery,
 } from '@/hooks/api/places';
-import {
-  useGetUserQuery,
-  useGetUserQueryServerSide,
-  User,
-} from '@/hooks/api/user';
+import { useGetUserQuery, useGetUserQueryServerSide } from '@/hooks/api/user';
 import { FeatureFlags, useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Footer } from '@/pages/Footer';
 import type { Event } from '@/types/Event';
@@ -241,9 +237,7 @@ const OfferRow = ({ item: offer, onDelete, ...props }: OfferRowProps) => {
   const { t, i18n } = useTranslation();
 
   const getUserQuery = useGetUserQuery();
-  // @ts-expect-error
   const userId = getUserQuery.data?.sub;
-  // @ts-expect-error
   const userIdv1 = getUserQuery.data?.['https://publiq.be/uitidv1id'];
   const isExternalCreator = ![userId, userIdv1].includes(offer.creator);
 
@@ -361,9 +355,7 @@ const OrganizerRow = ({
   const { t, i18n } = useTranslation();
 
   const getUserQuery = useGetUserQuery();
-  // @ts-expect-error
   const userId = getUserQuery.data?.sub;
-  // @ts-expect-error
   const userIdv1 = getUserQuery.data?.['https://publiq.be/uitidv1id'];
   const isExternalCreator = ![userId, userIdv1].includes(organizer.creator);
 
@@ -550,8 +542,7 @@ const Dashboard = (): any => {
     );
 
   const getUserQuery = useGetUserQuery();
-  // @ts-expect-error
-  const user = getUserQuery.data as User;
+  const user = getUserQuery.data;
 
   const handleSelectSorting = (event) => {
     const sortValue = event.target.value;
@@ -730,18 +721,21 @@ const Dashboard = (): any => {
 
 const getServerSideProps = getApplicationServerSideProps(
   async ({ req, query, cookies: rawCookies, queryClient }) => {
-    const user = (await useGetUserQueryServerSide({
+    const user = await useGetUserQueryServerSide({
       req,
       queryClient,
-    })) as User;
+    });
 
     await Promise.all(
       Object.entries(UseGetItemsByCreatorMap).map(([key, hook]) => {
         const page =
-          query.tab === key ? (query.page ? parseInt(query.page) : 1) : 1;
+          query.tab === key && query.page
+            ? parseInt((query.page as string) ?? '1')
+            : 1;
 
-        const sortingField = query?.sort?.split('_')[0] ?? SortingField.CREATED;
-        const sortingOrder = query?.sort?.split('_')[1] ?? SortingOrder.DESC;
+        const sort = query?.sort as string | undefined;
+        const sortingField = sort?.split('_')[0] ?? SortingField.CREATED;
+        const sortingOrder = sort?.split('_')[1] ?? SortingOrder.DESC;
 
         return hook({
           req,

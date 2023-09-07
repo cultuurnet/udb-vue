@@ -1,17 +1,16 @@
 import * as Sentry from '@sentry/nextjs';
 import getConfig from 'next/config';
+import { GetServerSidePropsContext } from 'next/types';
 import absoluteUrl from 'next-absolute-url';
 import { QueryClient } from 'react-query';
 import { generatePath, matchPath } from 'react-router';
 import UniversalCookies from 'universal-cookie';
 
-import { useGetUserQuery, useGetUserQueryServerSide } from '@/hooks/api/user';
-import { defaultCookieOptions } from '@/hooks/useCookiesWithOptions';
+import { useGetUserQueryServerSide } from '@/hooks/api/user';
 import { isFeatureFlagEnabledInCookies } from '@/hooks/useFeatureFlag';
 
 import { getRedirects } from '../redirects';
 import { FetchError } from './fetchFromApi';
-import { isTokenValid } from './isTokenValid';
 
 class Cookies extends UniversalCookies {
   toString() {
@@ -19,7 +18,7 @@ class Cookies extends UniversalCookies {
 
     return cookieEntries.reduce((previous, [key, value], currentIndex) => {
       const end = currentIndex !== cookieEntries.length - 1 ? '; ' : '';
-      const pair = `${key}=${encodeURIComponent(value)}${end}`;
+      const pair = `${key}=${encodeURIComponent(value as string)}${end}`;
       return `${previous}${pair}`;
     }, '');
   }
@@ -61,7 +60,13 @@ const getRedirect = (originalPath, environment, cookies) => {
     .find((match) => !!match);
 };
 
-const redirectToLogin = (cookies, req, resolvedUrl) => {
+const redirectToLogin = ({
+  cookies,
+  req,
+  resolvedUrl,
+}: Pick<ExtendedGetServerSidePropsContext, 'req' | 'resolvedUrl'> & {
+  cookies: Cookies;
+}) => {
   Sentry.setUser(null);
   cookies.remove('token');
 
@@ -76,22 +81,31 @@ const redirectToLogin = (cookies, req, resolvedUrl) => {
   };
 };
 
+type ExtendedGetServerSidePropsContext = GetServerSidePropsContext & {
+  cookies: string;
+  queryClient: QueryClient;
+};
+
 const getApplicationServerSideProps =
-  (callbackFn) =>
-  async ({ req, query, resolvedUrl }) => {
+  (callbackFn?: (context: ExtendedGetServerSidePropsContext) => any) =>
+  async ({
+    req,
+    query,
+    resolvedUrl,
+    ...context
+  }: GetServerSidePropsContext) => {
     const { publicRuntimeConfig } = getConfig();
     if (publicRuntimeConfig.environment === 'development') {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     }
 
-    const rawCookies = req?.headers?.cookie ?? '';
-
-    const cookies = new Cookies(rawCookies, defaultCookieOptions);
+    const cookies = new Cookies(req.cookies);
 
     req.headers.cookie = cookies.toString();
 
-    const isDynamicUrl = !!query.params;
-    const path = isDynamicUrl ? `/${query.params.join('/')}` : resolvedUrl;
+    const params = (query.params as string[]) ?? [];
+    const isDynamicUrl = Object.keys(params).length > 0;
+    const path = isDynamicUrl ? `/${params.join('/')}` : resolvedUrl;
 
     const redirect = getRedirect(
       path,
@@ -102,7 +116,9 @@ const getApplicationServerSideProps =
     if (redirect) {
       // Don't include the `params` in the redirect URL's query.
       delete query.params;
-      const queryParameters = new URLSearchParams(query);
+      const queryParameters = new URLSearchParams(
+        query as Record<string, string>,
+      );
 
       // Return the redirect as-is if there are no additional query parameters
       // to append.
@@ -124,7 +140,11 @@ const getApplicationServerSideProps =
       await useGetUserQueryServerSide({ req, queryClient });
     } catch (error) {
       if (error instanceof FetchError) {
-        return redirectToLogin(cookies, req, resolvedUrl);
+        return redirectToLogin({
+          cookies,
+          req,
+          resolvedUrl,
+        });
       }
     }
 
@@ -133,6 +153,8 @@ const getApplicationServerSideProps =
     if (!callbackFn) return { props: { cookies: cookies.toString() } };
 
     return await callbackFn({
+      ...context,
+      resolvedUrl,
       req,
       query,
       queryClient,

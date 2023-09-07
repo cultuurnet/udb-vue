@@ -10,11 +10,11 @@ export const getServerSideProps = getApplicationServerSideProps(
   async ({ req, query, queryClient, cookies }) => {
     const { eventId } = query;
 
-    const event = (await useGetEventByIdQuery({
-      id: eventId,
+    await useGetEventByIdQuery({
+      id: eventId as string,
       req,
       queryClient,
-    })) as Event;
+    });
 
     return {
       props: {

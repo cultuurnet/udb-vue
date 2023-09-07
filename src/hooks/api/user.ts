@@ -1,13 +1,13 @@
 import jwt_decode from 'jwt-decode';
-import getConfig from 'next/config';
 
 import { FetchError, fetchFromApi, isErrorObject } from '@/utils/fetchFromApi';
 
 import { Cookies, useCookiesWithOptions } from '../useCookiesWithOptions';
+import { ServerSideQueryOptions } from './authenticated-query';
 import {
-  ServerSideQueryOptions,
-  useAuthenticatedQuery,
-} from './authenticated-query';
+  prefetchAuthenticatedQuery,
+  useAuthenticatedQuery as useAuthenticatedQueryV2,
+} from './authenticated-query-v2';
 
 type User = {
   sub: string;
@@ -45,7 +45,7 @@ const getUser = async (cookies: Cookies) => {
     throw new FetchError(401, 'Unauthorized');
   }
 
-  const userInfo = jwt_decode(cookies.idToken) as User;
+  const userInfo = jwt_decode<User>(cookies.idToken);
   const decodedAccessToken = jwt_decode(cookies.token) as decodedAccessToken;
 
   if (Date.now() >= decodedAccessToken.exp * 1000) {
@@ -58,7 +58,7 @@ const getUser = async (cookies: Cookies) => {
 const useGetUserQuery = () => {
   const { cookies } = useCookiesWithOptions(['idToken']);
 
-  return useAuthenticatedQuery({
+  return useAuthenticatedQueryV2({
     queryKey: ['user'],
     queryFn: () => getUser(cookies),
   });
@@ -70,7 +70,7 @@ const useGetUserQueryServerSide = (
 ) => {
   const cookies = req.cookies;
 
-  return useAuthenticatedQuery({
+  return prefetchAuthenticatedQuery({
     req,
     queryClient,
     queryKey: ['user'],
@@ -82,19 +82,20 @@ const useGetUserQueryServerSide = (
 const getPermissions = async ({ headers }) => {
   const res = await fetchFromApi({
     path: '/user/permissions/',
-    options: {
-      headers,
-    },
+    options: { headers },
   });
+
   if (isErrorObject(res)) {
     // eslint-disable-next-line no-console
-    return console.error(res);
+    console.error(res);
+    return;
   }
-  return await res.json();
+
+  return (await res.json()) as string[];
 };
 
 const useGetPermissionsQuery = (configuration = {}) =>
-  useAuthenticatedQuery({
+  useAuthenticatedQueryV2({
     queryKey: ['user', 'permissions'],
     queryFn: getPermissions,
     ...configuration,
@@ -107,15 +108,18 @@ const getRoles = async ({ headers }) => {
       headers,
     },
   });
+
   if (isErrorObject(res)) {
     // eslint-disable-next-line no-console
-    return console.error(res);
+    console.error(res);
+    return;
   }
-  return await res.json();
+
+  return (await res.json()) as any[];
 };
 
 const useGetRolesQuery = (configuration = {}) =>
-  useAuthenticatedQuery({
+  useAuthenticatedQueryV2({
     queryKey: ['user', 'roles'],
     queryFn: getRoles,
     ...configuration,

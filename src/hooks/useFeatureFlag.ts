@@ -80,3 +80,5 @@ export {
   isFeatureFlagEnabledInCookies,
   useFeatureFlag,
 };
+
+export type { FeatureFlagName };

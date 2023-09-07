@@ -187,8 +187,7 @@ const ProfileMenu = ({ defaultProfileImageUrl }: ProfileMenuProps) => {
   const queryClient = useQueryClient();
 
   const getUserQuery = useGetUserQuery();
-  // @ts-expect-error
-  const user = getUserQuery.data as User;
+  const user = getUserQuery.data;
 
   const loginMenu = [
     {
@@ -407,19 +406,16 @@ const Sidebar = () => {
   }, [rawAnnouncements]);
 
   useEffect(() => {
-    // @ts-expect-error
     if (!getRolesQuery.data) {
       return;
     }
 
-    // @ts-expect-error
     const validationQuery = getRolesQuery.data
       .map((role) => (role.constraints?.v3 ? role.constraints.v3 : null))
       .filter((constraint) => constraint !== null)
       .join(' OR ');
 
     setSearchQuery(validationQuery);
-    // @ts-expect-error
   }, [getRolesQuery.data]);
 
   const announcements = useMemo(
@@ -465,7 +461,6 @@ const Sidebar = () => {
   ];
 
   const filteredManageMenu = useMemo(() => {
-    // @ts-expect-error
     if (!getPermissionsQuery.data) {
       return [];
     }
@@ -520,125 +515,125 @@ const Sidebar = () => {
     ];
 
     return manageMenu.filter((menuItem) => {
-      // @ts-expect-error
       return getPermissionsQuery.data.includes(menuItem.permission);
     });
-    // @ts-expect-error
   }, [countEventsToModerate, getPermissionsQuery.data, i18n.language, t]);
 
-  return [
-    <Stack
-      key="sidebar"
-      forwardedAs="nav"
-      height="100%"
-      css={`
-        overflow: hidden;
-      `}
-      width={{ default: '230px', s: '65px' }}
-      backgroundColor={getValueForSidebar('backgroundColor')}
-      color={getValueForSidebar('color')}
-      zIndex={getValueForSidebar('zIndex')}
-      padding={{ default: 2, s: 1 }}
-      spacing={3}
-      ref={sidebarComponent}
-      onMouseOver={() => {
-        if (!sidebarComponent?.current) return;
-        if (document.activeElement?.tagName?.toLowerCase() !== 'iframe') {
-          return;
-        }
-        // @ts-expect-error
-        document.activeElement.blur();
-      }}
-    >
-      <Link
-        justifyContent="center"
-        href="/dashboard"
-        title={t('menu.home')}
-        customChildren
-      >
-        <Logo
-          variant={isSmallView ? LogoVariants.MOBILE : LogoVariants.DEFAULT}
-        />
-      </Link>
+  return (
+    <>
       <Stack
-        paddingTop={4}
-        spacing={4}
-        flex={1}
+        key="sidebar"
+        forwardedAs="nav"
+        height="100%"
         css={`
-          > :not(:first-child) {
-            border-top: 1px solid ${getValueForMenu('borderColor')};
-          }
+          overflow: hidden;
         `}
-      >
-        <Menu items={userMenu} />
-        <Stack
-          justifyContent={
-            filteredManageMenu.length > 0 ? 'space-between' : 'flex-end'
+        width={{ default: '230px', s: '65px' }}
+        backgroundColor={getValueForSidebar('backgroundColor')}
+        color={getValueForSidebar('color')}
+        zIndex={getValueForSidebar('zIndex')}
+        padding={{ default: 2, s: 1 }}
+        spacing={3}
+        ref={sidebarComponent}
+        onMouseOver={() => {
+          if (!sidebarComponent?.current) return;
+          if (document.activeElement?.tagName?.toLowerCase() !== 'iframe') {
+            return;
           }
-          flex={1}
+          // @ts-expect-error
+          document.activeElement.blur();
+        }}
+      >
+        <Link
+          justifyContent="center"
+          href="/dashboard"
+          title={t('menu.home')}
+          customChildren
         >
-          {filteredManageMenu.length > 0 && (
-            <Menu items={filteredManageMenu} title={t('menu.management')} />
-          )}
-          <Stack>
-            <Inline
-              display={shouldShowBetaVersion ? 'inherit' : 'none'}
-              flex={1}
-              paddingLeft={2}
-              alignItems="center"
-              justifyContent={{ default: 'space-between', s: 'center' }}
-              stackOn={Breakpoints.S}
-              padding={2}
-            >
+          <Logo
+            variant={isSmallView ? LogoVariants.MOBILE : LogoVariants.DEFAULT}
+          />
+        </Link>
+        <Stack
+          paddingTop={4}
+          spacing={4}
+          flex={1}
+          css={`
+            > :not(:first-child) {
+              border-top: 1px solid ${getValueForMenu('borderColor')};
+            }
+          `}
+        >
+          <Menu items={userMenu} />
+          <Stack
+            justifyContent={
+              filteredManageMenu.length > 0 ? 'space-between' : 'flex-end'
+            }
+            flex={1}
+          >
+            {filteredManageMenu.length > 0 && (
+              <Menu items={filteredManageMenu} title={t('menu.management')} />
+            )}
+            <Stack>
               <Inline
-                stackOn={Breakpoints.S}
-                spacing={{ default: 3, s: 1 }}
+                display={shouldShowBetaVersion ? 'inherit' : 'none'}
+                flex={1}
+                paddingLeft={2}
                 alignItems="center"
-                justifyContent={{ default: 'center', s: 'center' }}
+                justifyContent={{ default: 'space-between', s: 'center' }}
+                stackOn={Breakpoints.S}
+                padding={2}
               >
-                <Icon name={Icons.EYE} />
-                <BetaVersionToggle
-                  checked={isNewCreateEnabled}
-                  onChange={() => {
-                    setIsNewCreateEnabled((prev) => !prev);
-                  }}
-                />
-              </Inline>
-              {!isSmallView && (
-                <Link
-                  href="/beta-version"
-                  variant={ButtonVariants.UNSTYLED}
-                  customChildren
+                <Inline
+                  stackOn={Breakpoints.S}
+                  spacing={{ default: 3, s: 1 }}
+                  alignItems="center"
+                  justifyContent={{ default: 'center', s: 'center' }}
                 >
-                  <QuestionCircleIcon />
-                </Link>
-              )}
-            </Inline>
-            <NotificationMenu
-              countUnseenAnnouncements={countUnseenAnnouncements}
-              jobLoggerState={jobLoggerState}
-              onClickAnnouncementsButton={toggleIsAnnouncementsModalVisible}
-              onClickJobLoggerButton={toggleIsJobLoggerVisible}
-            />
-            <ProfileMenu />
+                  <Icon name={Icons.EYE} />
+                  <BetaVersionToggle
+                    checked={isNewCreateEnabled}
+                    onChange={() => {
+                      setIsNewCreateEnabled((prev) => !prev);
+                    }}
+                  />
+                </Inline>
+                {!isSmallView && (
+                  <Link
+                    href="/beta-version"
+                    variant={ButtonVariants.UNSTYLED}
+                    customChildren
+                  >
+                    <QuestionCircleIcon />
+                  </Link>
+                )}
+              </Inline>
+              <NotificationMenu
+                countUnseenAnnouncements={countUnseenAnnouncements}
+                jobLoggerState={jobLoggerState}
+                onClickAnnouncementsButton={toggleIsAnnouncementsModalVisible}
+                onClickJobLoggerButton={toggleIsJobLoggerVisible}
+              />
+              <ProfileMenu />
+            </Stack>
           </Stack>
         </Stack>
       </Stack>
-    </Stack>,
-    <JobLogger
-      key="joblogger"
-      visible={isJobLoggerVisible}
-      onClose={() => setIsJobLoggerVisible((oldState) => !oldState)}
-      onStatusChange={setJobLoggerState}
-    />,
-    <Announcements
-      key="announcements"
-      visible={announcementModalContext.visible}
-      announcements={announcements || []}
-      onClickAnnouncement={handleClickAnnouncement}
-      onClose={toggleIsAnnouncementsModalVisible}
-    />,
-  ];
+      <JobLogger
+        key="joblogger"
+        visible={isJobLoggerVisible}
+        onClose={() => setIsJobLoggerVisible((oldState) => !oldState)}
+        onStatusChange={setJobLoggerState}
+      />
+      <Announcements
+        key="announcements"
+        visible={announcementModalContext.visible}
+        announcements={announcements || []}
+        onClickAnnouncement={handleClickAnnouncement}
+        onClose={toggleIsAnnouncementsModalVisible}
+      />
+    </>
+  );
 };
 
 export { Sidebar };

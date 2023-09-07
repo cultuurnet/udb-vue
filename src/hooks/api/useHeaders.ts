@@ -2,7 +2,10 @@ import getConfig from 'next/config';
 
 import { useCookiesWithOptions } from '../useCookiesWithOptions';
 
-const createHeaders = (token, extraHeaders) => {
+const createHeaders = (
+  token: string,
+  extraHeaders: HeadersInit = {},
+): HeadersInit => {
   const { publicRuntimeConfig } = getConfig();
 
   return {

@@ -136,7 +136,6 @@ const OrganizerPicker = ({
   const queryClient = useQueryClient();
 
   const getUserQuery = useGetUserQuery();
-  // @ts-expect-error
   const user = getUserQuery.data;
 
   const [addButtonHasBeenPressed, setAddButtonHasBeenPressed] = useState(false);
