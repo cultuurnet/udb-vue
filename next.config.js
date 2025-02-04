@@ -6,17 +6,6 @@ const { withSentryConfig } = require('@sentry/nextjs');
 const moduleExports = {
   productionBrowserSourceMaps: true,
   swcMinify: true,
-  async redirects() {
-    // Redirects to fix non-existing paths should go in `src/redirects.js`!!!
-    const env = process.env.NEXT_PUBLIC_ENVIRONMENT;
-    return [
-      {
-        source: '/',
-        destination: '/dashboard',
-        permanent: env !== 'development',
-      },
-    ];
-  },
   async rewrites() {
     return [
       {

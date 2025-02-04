@@ -1,13 +1,21 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { Cookies } from 'react-cookie';
 
 import { getAuthEdgeServer } from '@/auth/edge';
 
 import { defaultCookieOptions } from './hooks/useCookiesWithOptions';
+import { isTokenValid } from './utils/isTokenValid';
 
 const authEdgeServer = getAuthEdgeServer();
 
 export const middleware = async (request: NextRequest) => {
+  if (request.nextUrl.pathname === '/') {
+    const token = request.cookies.get('token');
+    if (isTokenValid(token)) {
+      return NextResponse.redirect(`${request.nextUrl.origin}/dashboard`);
+    }
+  }
   if (request.nextUrl.pathname.startsWith('/login')) {
     const referer = request.cookies.get('auth0.redirect_uri');
 
@@ -47,5 +55,5 @@ export const middleware = async (request: NextRequest) => {
 };
 
 export const config = {
-  matcher: ['/event', '/login'],
+  matcher: ['/', '/event', '/login'],
 };
